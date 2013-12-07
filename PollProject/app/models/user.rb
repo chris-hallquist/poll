@@ -22,9 +22,9 @@ class User < ActiveRecord::Base
     #self.responses.joins(:answer_choice).joins(:question).joins(:poll)
     Poll.find_by_sql([<<-SQL, {:user_id => self.id }])
       SELECT
-        polls.*, COUNT(*) AS poll_question_count,
+        polls.*,
         (SELECT
-           COUNT(*)
+           polls.title, COUNT(responses.id)
          FROM
            responses
          JOIN
@@ -46,11 +46,14 @@ class User < ActiveRecord::Base
         ) AS poll_response_count
       FROM
         polls
-      WHERE
-        poll_question_count = poll_response_count
+      JOIN
+        questions
+      ON
+        questions.poll_id = polls.id
       GROUP BY
         polls.id
-
+      HAVING
+        COUNT(questions.id) = poll_response_count
     SQL
   end
 end
